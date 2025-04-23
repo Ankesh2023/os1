@@ -1,0 +1,25 @@
+labex:Code/ $ gcc fget_fput.c -o copy
+labex:Code/ $ gcc grep.c -o grep
+labex:Code/ $ gcc forkcall.c -o fork
+labex:Code/ $ ./fork source.txt destination.txt banana
+Enter 1 for copy command
+Enter 2 for grep 
+Enter 3 for exit:1
+File copied using fgets and fputs.
+Parent process5298
+
+Parent's Parent Process: 2941
+Enter 1 for copy command
+Enter 2 for grep 
+Enter 3 for exit:2
+this si banana
+banana is hello 
+banana is good for health
+banana
+Word occured in 4 line
+Parent process5298
+
+Enter 1 for copy command
+Enter 2 for grep 
+Enter 3 for exit:3
+labex:Code/ $ 

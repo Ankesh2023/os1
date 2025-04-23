@@ -1,0 +1,134 @@
+This program replicates the shell command:
+
+bash
+Copy
+Edit
+cat <file> | grep <pattern>
+Where:
+
+cat <file> reads the contents of the file.
+
+| (pipe) sends the output of cat into the input of grep.
+
+grep <pattern> searches for lines containing the pattern.
+
+📦 Key Concept: PIPE
+🔧 What is a pipe?
+A pipe is a unidirectional communication channel between processes. It uses:
+
+c
+Copy
+Edit
+int pipefd[2];
+pipefd[0] → read end
+
+pipefd[1] → write end
+
+When pipe(pipefd) is called, it creates a pipe. Now:
+
+Parent can write data to pipefd[1]
+
+Child can read that data from pipefd[0]
+
+🧩 Code Breakdown
+c
+Copy
+Edit
+int pipefd[2];
+pid_t cpid;
+Declares the pipe file descriptors and a variable for process ID.
+
+✅ Argument Check
+c
+Copy
+Edit
+if (argc != 3) {
+    fprintf(stderr, "Usage: %s <file> <pattern>\n", argv[0]);
+    exit(EXIT_FAILURE);
+}
+Ensures user provides a file and a search pattern.
+
+🔧 Creating Pipe
+c
+Copy
+Edit
+if (pipe(pipefd) == -1) {
+    perror("pipe");
+    exit(EXIT_FAILURE);
+}
+pipe() initializes the pipe.
+
+If it fails, the program exits.
+
+🧬 Forking Process
+c
+Copy
+Edit
+cpid = fork();
+Creates a child process.
+
+After fork(), both parent and child continue independently.
+
+👶 Child Process (GREP)
+c
+Copy
+Edit
+if (cpid == 0) {
+    close(pipefd[1]); // Close write end
+    dup2(pipefd[0], STDIN_FILENO); // Redirect stdin to read from pipe
+    close(pipefd[0]); // Clean up
+
+    execlp("grep", "grep", argv[2], NULL); // Run grep <pattern>
+    perror("execlp");
+    _exit(EXIT_FAILURE);
+}
+What Happens Here:
+Child process closes write end of the pipe.
+
+Redirects stdin (standard input) to pipe's read end using dup2(). Now grep will read from the pipe.
+
+Executes grep with the user-provided pattern. Input comes from the pipe (from the parent).
+
+If execlp() fails, print an error.
+
+👨 Parent Process (CAT)
+c
+Copy
+Edit
+else {
+    close(pipefd[0]); // Close read end
+    dup2(pipefd[1], STDOUT_FILENO); // Redirect stdout to write to pipe
+    close(pipefd[1]); // Clean up
+
+    execlp("cat", "cat", argv[1], NULL); // Run cat <file>
+    perror("execlp");
+    exit(EXIT_FAILURE);
+}
+What Happens Here:
+Parent closes read end.
+
+Redirects stdout (standard output) to pipe’s write end using dup2(). Now cat will write to the pipe.
+
+Executes cat on the file — the file content is passed through the pipe.
+
+If execlp() fails, print error.
+
+🧪 Example Run
+bash
+Copy
+Edit
+./pipegrep myfile.txt hello
+Parent runs cat myfile.txt and writes its output into the pipe.
+
+Child reads from the pipe and runs grep hello.
+
+So the output shows all lines in myfile.txt that contain the word hello.
+
+📌 Summary of Concepts Used
+
+Concept	Explanation
+pipe()	Creates a unidirectional data stream between two file descriptors.
+fork()	Creates a new child process.
+dup2()	Redirects file descriptors (stdin, stdout) to custom pipe ends.
+execlp()	Replaces current process with a new program (like cat, grep).
+close()	Closes unused ends of the pipe to avoid deadlocks or leaks.
